@@ -34,15 +34,14 @@ from src.monitoring.judge_worker import JudgeWorker
 from src.monitoring.metrics import (
     assistant_info,
     chat_cost_usd_total,
+    chat_input_tokens,
+    chat_output_tokens,
+    chat_request_duration_seconds,
     chat_requests_total,
     deep_judge_queue_depth,
     in_flight_requests,
     judge_sample_rate,
     llm_api_errors_total,
-    # TODO (Task 4): import chat_request_duration_seconds, chat_input_tokens,
-    # chat_output_tokens once you've defined them in src/monitoring/metrics.py.
-    # Then add the token .observe() calls inside the cost loop in /chat below,
-    # and the duration .observe() in the `finally:` block.
 )
 
 log = logging.getLogger(__name__)
@@ -257,9 +256,12 @@ async def chat(req: ChatRequest) -> ChatResponse:
             chat_cost_usd_total.labels(
                 config_id=config_id, model=call.model
             ).inc(cost_usd(call.model, call.input_tokens, call.output_tokens))
-            # TODO (Task 4): in the same loop, observe per-call token counts on
-            # `chat_input_tokens` and `chat_output_tokens` (labels: config_id,
-            # model) once you've defined those Histograms.
+            chat_input_tokens.labels(
+                config_id=config_id, model=call.model
+            ).observe(call.input_tokens)
+            chat_output_tokens.labels(
+                config_id=config_id, model=call.model
+            ).observe(call.output_tokens)
 
         chat_requests_total.labels(
             config_id=config_id,
@@ -294,8 +296,7 @@ async def chat(req: ChatRequest) -> ChatResponse:
             ],
         )
     finally:
-        # TODO (Task 4): observe end-to-end request duration on
-        # chat_request_duration_seconds (labels: config_id). Use
-        # time.perf_counter() - start. The latency-quantiles Grafana panel
-        # reads from this Histogram via histogram_quantile(...).
+        chat_request_duration_seconds.labels(config_id=config_id).observe(
+            time.perf_counter() - start
+        )
         in_flight_requests.dec()

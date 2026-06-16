@@ -54,6 +54,7 @@ class _JudgeReply(BaseModel):
     """Validated JSON shape returned by the judge."""
 
     verdict: Verdict
+    reasoning: str
 
 
 _RESPONSE_FORMAT = {
@@ -67,9 +68,12 @@ _RESPONSE_FORMAT = {
                 "verdict": {
                     "type": "string",
                     "enum": _PRODUCTION_VERDICTS,
-                }
+                },
+                "reasoning": {
+                    "type": "string",
+                },
             },
-            "required": ["verdict"],
+            "required": ["verdict", "reasoning"],
             "additionalProperties": False,
         },
     },

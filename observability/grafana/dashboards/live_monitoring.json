@@ -27,11 +27,22 @@
       "gridPos": {"h": 9, "w": 12, "x": 0, "y": 8},
       "id": 2,
       "title": "DIVERGENCE: cheap refusal-rate vs judge leakage-rate",
-      "description": "[Task 4 — implement] Cheap refusal-rate is exact-match on the canned refusal string (100% of traffic, 5m window). Judge leakage-rate is the deep judge on sampled traffic (1h window). When they diverge — cheap says 'refused' but judge says 'leaked' — you've shipped a regression. YOUR TASK: write PromQL for both series; see the PromQL primer in tasks/task4.md.",
+      "description": "Cheap refusal-rate is exact-match on the canned refusal string (100% of traffic, 5m window). Judge leakage-rate is the deep judge on sampled traffic (1h window). When they diverge — cheap says 'refused' but judge says 'leaked' — you've shipped a regression.",
       "type": "timeseries",
       "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1}, "overrides": []},
       "options": {"legend": {"showLegend": true, "placement": "bottom", "displayMode": "list"}, "tooltip": {"mode": "multi"}},
-      "targets": []
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (config_id) (rate(chat_requests_total{refused=\"true\"}[5m])) / sum by (config_id) (rate(chat_requests_total[5m]))",
+          "legendFormat": "cheap refusal-rate ({{config_id}})"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (config_id) (rate(judge_evaluations_total{verdict=\"leaked\"}[1h])) / sum by (config_id) (rate(judge_evaluations_total[1h]))",
+          "legendFormat": "judge leakage-rate ({{config_id}})"
+        }
+      ]
     },
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -54,11 +65,27 @@
       "gridPos": {"h": 9, "w": 12, "x": 0, "y": 17},
       "id": 4,
       "title": "Request latency (p50 / p95 / p99) by config",
-      "description": "[Task 4 — implement] End-to-end /chat latency quantiles, sliced by config_id. Reads from the chat_request_duration_seconds Histogram you'll define. YOUR TASK: write three histogram_quantile queries (0.5, 0.95, 0.99) — see the PromQL primer in tasks/task4.md for the standard pattern.",
+      "description": "End-to-end /chat latency quantiles, sliced by config_id. Reads from the chat_request_duration_seconds Histogram.",
       "type": "timeseries",
       "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
       "options": {"legend": {"showLegend": true, "placement": "bottom", "displayMode": "list"}, "tooltip": {"mode": "multi"}},
-      "targets": []
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le, config_id) (rate(chat_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p50 ({{config_id}})"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, config_id) (rate(chat_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95 ({{config_id}})"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le, config_id) (rate(chat_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p99 ({{config_id}})"
+        }
+      ]
     },
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -128,11 +155,17 @@
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
       "id": 10,
       "title": "Judge verdicts (1h rolling)",
-      "description": "[Task 4 — implement] Rate of each judge verdict (answered_correctly / refused_correctly / leaked / over_refused / judge_error), 1h rolling window, sliced by verdict. Reads from the judge_evaluations_total Counter you'll define. YOUR TASK: write the PromQL — sum by (verdict) of rate(...[1h]).",
+      "description": "Rate of each judge verdict (answered_correctly / refused_correctly / leaked / over_refused / judge_error), 1h rolling window, sliced by verdict. Reads from the judge_evaluations_total Counter.",
       "type": "timeseries",
       "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
       "options": {"legend": {"showLegend": true, "placement": "bottom", "displayMode": "list"}, "tooltip": {"mode": "multi"}},
-      "targets": []
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (verdict) (rate(judge_evaluations_total[1h]))",
+          "legendFormat": "{{verdict}}"
+        }
+      ]
     },
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},

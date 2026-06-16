@@ -1,0 +1,18 @@
+display_name: "Sandwich (Gemma 3)"
+description: "Input classifier + main (Gemma 3) + output validator. Testing a different model architecture."
+model:
+  name: google/gemma-3-27b-it
+  temperature: 0.0
+system_prompt: prompts/v2_explicit_refusal.txt
+guardrail:
+  type: sandwich
+  input_classifier:
+    model:
+      name: google/gemma-3-27b-it
+      temperature: 0.0
+    prompt: prompts/classifier_input.txt
+  output_validator:
+    model:
+      name: google/gemma-3-27b-it
+      temperature: 0.0
+    prompt: prompts/classifier_output.txt
